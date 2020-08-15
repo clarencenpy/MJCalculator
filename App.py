@@ -13,52 +13,66 @@ def get_cumulative():
     return []
 
 
-players = [st.sidebar.text_input(f"Player{i} Name", f"Player{i}") for i in range(1, 5)]
+@st.cache(allow_output_mutation=True)
+def get_players():
+    return []
 
-bet = st.sidebar.number_input(
-    "Winnings per 台 (cents)", step=20, min_value=20, max_value=200, value=40
-)
-win_type = st.sidebar.selectbox("Win Type", ("胡", "自摸", "杠", "暗杠", "花"))
 
-winner = st.sidebar.selectbox("谁赢？", players)
+players = get_players()
+if len(players) < 4:
+    st.sidebar.markdown("## Enter player names")
+    names = [
+        st.sidebar.text_input(f"Player{i} Name", f"Player{i}") for i in range(1, 5)
+    ]
+    if st.sidebar.button("Start Playing"):
+        for name in names:
+            players.append(name)
 
-if win_type == "胡":
-    feeder = st.sidebar.selectbox("谁喂牌？", [p for p in players if p != winner])
+else:
+    bet = st.sidebar.number_input(
+        "Winnings per 台 (cents)", step=20, min_value=20, max_value=200, value=40
+    )
+    win_type = st.sidebar.selectbox("Win Type", ("胡", "自摸", "杠", "暗杠", "花"))
 
-if win_type == "胡" or win_type == "自摸":
-    tai = st.sidebar.number_input("几台？", min_value=1, max_value=4)
+    winner = st.sidebar.selectbox("谁赢？", players)
 
-if st.sidebar.button("Calculate"):
-    row = {"win_type": win_type}
     if win_type == "胡":
-        for player in players:
-            if player == winner:
-                row[player] = 4 * (bet * 2 ** (tai - 1))
-            elif player == feeder:
-                row[player] = -2 * (bet * 2 ** (tai - 1))
-            else:
-                row[player] = -1 * (bet * 2 ** (tai - 1))
-    elif win_type == "自摸":
-        tai += 1
-        for player in players:
-            if player == winner:
-                row[player] = 3 * (bet * 2 ** (tai - 1))
-            else:
-                row[player] = -1 * (bet * 2 ** (tai - 1))
-    elif win_type == "杠" or win_type == "花":
-        for player in players:
-            if player == winner:
-                row[player] = 3 * 50
-            else:
-                row[player] = -1 * 50
-    elif win_type == "暗杠":
-        for player in players:
-            if player == winner:
-                row[player] = 3 * 100
-            else:
-                row[player] = -1 * 100
-    get_data().append(row)
-    get_cumulative().append(pd.DataFrame(get_data()).sum(axis=0))
+        feeder = st.sidebar.selectbox("谁喂牌？", [p for p in players if p != winner])
+
+    if win_type == "胡" or win_type == "自摸":
+        tai = st.sidebar.number_input("几台？", min_value=1, max_value=4)
+
+    if st.sidebar.button("Calculate"):
+        row = {"win_type": win_type}
+        if win_type == "胡":
+            for player in players:
+                if player == winner:
+                    row[player] = 4 * (bet * 2 ** (tai - 1))
+                elif player == feeder:
+                    row[player] = -2 * (bet * 2 ** (tai - 1))
+                else:
+                    row[player] = -1 * (bet * 2 ** (tai - 1))
+        elif win_type == "自摸":
+            tai += 1
+            for player in players:
+                if player == winner:
+                    row[player] = 3 * (bet * 2 ** (tai - 1))
+                else:
+                    row[player] = -1 * (bet * 2 ** (tai - 1))
+        elif win_type == "杠" or win_type == "花":
+            for player in players:
+                if player == winner:
+                    row[player] = 3 * 50
+                else:
+                    row[player] = -1 * 50
+        elif win_type == "暗杠":
+            for player in players:
+                if player == winner:
+                    row[player] = 3 * 100
+                else:
+                    row[player] = -1 * 100
+        get_data().append(row)
+        get_cumulative().append(pd.DataFrame(get_data()).sum(axis=0))
 
 st.write("# Mahjong Calculator")
 if len(get_data()) > 0:
